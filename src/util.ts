@@ -1,33 +1,13 @@
-export type IData = (number | null)[];
+import { DataItem, DrillDownGroup, IData } from "./types";
 
-interface DataItem {
-  value: number | null;
-  groupId: string;
-}
-
-interface DrilldownGroup {
-  dataGroupId: string;
-  data: IData[];
-}
-
-export const generateMonthlyDrilldownData = (
-  rawData: [number, number | null][],
+export const generateMonthlyDrillDownData = (
+  rawData: IData[],
   startDate: Date,
   endDate: Date
 ) => {
-  const getFirstDaysOfMonths = (start: Date, end: Date): number[] => {
-    const result: number[] = [];
-    let current = new Date(start.getFullYear(), start.getMonth(), 1);
-    while (current <= end) {
-      result.push(current.getTime());
-      current.setMonth(current.getMonth() + 1);
-    }
-    return result;
-  };
-
   const monthTimestamps = getFirstDaysOfMonths(startDate, endDate);
 
-  const monthlyData: Record<string, [number, number | null][]> = {};
+  const monthlyData: Record<string, IData[]> = {};
   rawData.forEach(([timestamp, value]) => {
     const date = new Date(timestamp);
     const yearMonth = `${date.getFullYear()}-${String(
@@ -40,7 +20,7 @@ export const generateMonthlyDrilldownData = (
   });
 
   const seriesData: DataItem[] = [];
-  const drilldownData: DrilldownGroup[] = [];
+  const drillDownData: DrillDownGroup[] = [];
 
   monthTimestamps.forEach((timestamp) => {
     const date = new Date(timestamp);
@@ -58,7 +38,7 @@ export const generateMonthlyDrilldownData = (
       groupId: yearMonth,
     });
 
-    drilldownData.push({
+    drillDownData.push({
       dataGroupId: yearMonth,
       data:
         monthData.length > 0
@@ -70,21 +50,18 @@ export const generateMonthlyDrilldownData = (
     });
   });
 
-  return { seriesData, drilldownData };
+  return { seriesData, drillDownData };
 };
 
 export const getDaysInMonth = (year: number, month: number): number => {
   return new Date(year, month + 1, 0).getDate();
 };
 
-export const fillDailyData = (
-  monthData: Array<[string, number | null]>,
-  month: string
-) => {
+export const fillDailyData = (monthData: IData[], month: string) => {
   const [year, monthIndex] = month.split("-").map(Number);
   const daysInMonth = getDaysInMonth(year, monthIndex - 1);
 
-  const filledData: Array<[string, number | null]> = [];
+  const filledData: IData[] = [];
   for (let day = 1; day <= daysInMonth; day++) {
     const dateKey = `${year}-${monthIndex.toString().padStart(2, "0")}-${day
       .toString()
@@ -93,4 +70,15 @@ export const fillDailyData = (
     filledData.push([dateKey, existingData ? existingData[1] : null]);
   }
   return filledData;
+};
+
+const getFirstDaysOfMonths = (start: Date, end: Date): number[] => {
+  const result: number[] = [];
+
+  let current = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (current <= end) {
+    result.push(current.getTime());
+    current.setMonth(current.getMonth() + 1);
+  }
+  return result;
 };

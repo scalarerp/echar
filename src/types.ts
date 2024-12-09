@@ -1,12 +1,14 @@
 export type vData = number | null;
-export type IData = vData[];
+export type IData = [number, vData];
 
-export interface DataItem {
-  value: vData;
+export interface IDailyData {
+  value: vData; 
   groupId: string;
 }
 
-export interface DrillDownGroup {
-  dataGroupId: string;
-  data: IData[];
+
+export interface IMonthlyData {
+  dataGroupId: string
+  value: vData; 
+  children: IDailyData[]; 
 }

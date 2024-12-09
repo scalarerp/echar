@@ -1,82 +1,71 @@
-import { useState } from "react";
-import ReactECharts from "echarts-for-react";
+import { useEffect, useRef } from "react";
+import { dispose, init } from "echarts";
+import type { ECElementEvent } from "echarts";
 import { data } from "./rdata";
-import { fillDailyData, generateMonthlyDrilldownData } from "./util";
+import { generateMonthlyDrillDownData } from "./util";
+import { getFirstDayOfMonth, getLastDayOfMonth } from "./datesUtil";
+import { IMonthlyData } from "./types";
 
-const startDate = new Date("2024-01-01");
-const endDate = new Date("2024-12-31");
-
-const { seriesData, drilldownData } = generateMonthlyDrilldownData(
-  data,
-  startDate,
-  endDate
-);
+const startDate = getFirstDayOfMonth(2024, 1);
+const endDate = getLastDayOfMonth(2024, 12);
+const { monthlyData } = generateMonthlyDrillDownData(data, startDate, endDate);
 
 const App = () => {
-  const [view, setView] = useState<"monthly" | "daily">("monthly");
-  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
 
-  const getOptions = () => {
-    if (view === "monthly") {
-      return {
-        title: { text: "Dados Mensais" },
-        xAxis: {
-          type: "category",
-          data: seriesData.map((item) => item.groupId), // Meses como categorias
-        },
-        yAxis: { type: "value" },
-        series: [
-          {
-            type: "bar",
-            data: seriesData.map((item) => item.value),
-          },
-        ],
-      };
-    }
+  const getOptions = (selected?: IMonthlyData) => {
+    const month = selected?.dataGroupId || "";
+    const xAxisData = selected
+      ? selected.children.map((x) => x.groupId)
+      : monthlyData.map((x) => x.dataGroupId);
+    const yAxisData = selected
+      ? selected.children.map((x) => x.value)
+      : monthlyData.map((x) => x.value);
 
-    const dailyData = drilldownData.find(
-      (group) => group.dataGroupId === selectedMonth
-    )?.data;
-
-    const filledDailyData = dailyData
-      ? fillDailyData(dailyData, selectedMonth!)
-      : [];
-
-    return {
-      title: { text: `Dados Diários (${selectedMonth})` },
+    const result = {
+      title: { text: selected ? `Dados Diários ${month}` : "Dados Mensais" },
+      showBack: !!selected,
       xAxis: {
         type: "category",
-        data: filledDailyData.map(([date]) => date),
+        data: xAxisData,
       },
       yAxis: { type: "value" },
       series: [
         {
           type: "bar",
-          data: filledDailyData.map(([, value]) => value),
+          data: yAxisData,
         },
       ],
     };
+
+    return result;
   };
+
+  useEffect(() => {
+    if (!chartRef) return;
+    if (!chartRef.current) return;
+    const _echart = init(chartRef.current, "light", { renderer: "canvas" });
+    _echart.on("click", (params: ECElementEvent) => {
+      const selected = monthlyData[params.dataIndex];
+      if (selected) {
+        _echart.setOption(getOptions(selected), true);
+        return;
+      }
+      _echart.setOption(getOptions(), true);
+    });
+    _echart.setOption(getOptions());
+    return () => {
+      dispose(_echart);
+    };
+  }, []);
 
   return (
     <div>
-      {view === "daily" && (
-        <button onClick={() => setView("monthly")}>Voltar</button>
-      )}
-      <ReactECharts
-        option={getOptions()}
-        onEvents={{
-          click: (params) => {
-            if (view === "monthly") {
-              const month = seriesData[params.dataIndex]?.groupId;
-              if (month) {
-                setSelectedMonth(month);
-                setView("daily");
-              }
-            }
-          },
-        }}
-        style={{ height: 400 }}
+      <div
+        className="mb-3"
+        id={"bar-chart"}
+        ref={chartRef}
+        style={{ width: "92%", height: 400 }}
       />
     </div>
   );

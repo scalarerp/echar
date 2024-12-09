@@ -1,3 +1,10 @@
+export const monthlyFormat = (d: Date) => {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+export const dayTwoDigitsFormat = (d: Date) => {
+  return `${d.getDate()}`.padStart(2, "0");
+};
+
 export const firstAndLastDayOfMonth = (d: Date) => {
   const year = d.getFullYear();
   const month = d.getMonth();
@@ -8,11 +15,30 @@ export const firstAndLastDayOfMonth = (d: Date) => {
   };
 };
 
-export const getFirstDayOfMonth = (year: number, month: number) => {
+export const getDaysInMonth = (
+  year: number,
+  month: number,
+  monthZeroBased: boolean = false
+): number => {
+  if (!monthZeroBased) new Date(year, month, 0).getDate();
+  return new Date(year, month + 1, 0).getDate();
+};
+
+export const getFirstDayOfMonth = (
+  year: number,
+  month: number,
+  monthZeroBased: boolean = false
+) => {
+  if (!monthZeroBased) return new Date(year, month - 1, 1);
   return new Date(year, month, 1);
 };
 
-export const getLastDayOfMonth = (year: number, month: number) => {
+export const getLastDayOfMonth = (
+  year: number,
+  month: number,
+  monthZeroBased: boolean = false
+) => {
+  if (!monthZeroBased) return new Date(year, month, 0);
   return new Date(year, month + 1, 0);
 };
 
@@ -44,9 +70,7 @@ export const getAllMonthsBetweenDates = (
   ); // Normaliza para o início do mês
 
   while (currentDate <= endDate) {
-    const formattedMonth = `${(currentDate.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}-${currentDate.getFullYear()}`;
+    const formattedMonth = monthlyFormat(currentDate);
     months.push(formattedMonth);
     currentDate.setMonth(currentDate.getMonth() + 1);
   }

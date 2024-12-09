@@ -35,6 +35,13 @@ const App = () => {
         {
           type: "bar",
           data: yAxisData,
+          label: {
+            show: true,
+            position: 'top',
+             valueAnimation: true,
+             formatter: (params: any) => `${params.value} kg`,
+          },
+       
         },
       ],
     };
